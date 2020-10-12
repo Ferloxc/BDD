@@ -34,7 +34,6 @@ CREATE TABLE Matricula(
     int_id_Estudiante INT NOT NULL
 );
 
-
 ALTER TABLE Chamba
 ADD CONSTRAINT Chamba_MAS_FK
     FOREIGN KEY (int_id_Maestro) REFERENCES Maestro (id_Maestro),
@@ -98,5 +97,10 @@ INSERT INTO Matricula() VALUES
     (3,5)
 ;
 
-SELECT * FROM Estudiante;
-SELECT Matricula.int_id_Estudiante, COUNT(*) AS "Cantidad_Clases" FROM Matricula  GROUP BY Matricula.int_id_Estudiante
+SELECT Matricula.int_id_Estudiante AS "ID", COUNT(*) AS "Clases" FROM Matricula GROUP BY Matricula.int_id_Estudiante;
+
+SELECT Estudiante.var_nombre AS "Nombre", Asignatura.var_nombre AS "Asignatura" FROM Matricula JOIN Estudiante ON  Matricula.int_id_Estudiante = Estudiante.id_Estudiante JOIN Asignatura ON Matricula.int_id_Asignatura = Asignatura.id_Asignatura ORDER BY `Nombre` ASC;
+
+SELECT AVG(prom.Cantidad_Clases) AS "Promedio de clases Matriculadas" FROM (SELECT Matricula.int_id_Estudiante, COUNT(*) AS "Cantidad_Clases" FROM Matricula GROUP BY Matricula.int_id_Estudiante) AS prom;
+
+SELECT AVG(prom.Cantidad_Clases) AS "Promedio de clases Matriculadas" FROM (SELECT Chamba.int_id_Maestro, COUNT(*) AS "Cantidad_Clases" FROM Chamba GROUP BY Chamba.int_id_Maestro) AS prom;
