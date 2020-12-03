@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset = "utf-8">
+    <meta name = "Author" content = "fernando.cortes@unah.hn">
+    <meta name = "IndexDB" content = "Base de datos usando JS y HTML">
+</head>
+<body>
+    <div id="I">
+        <input type="radio" name = "radio" id="add"  value ="add">Agregar<br>
+        <input type="radio" name = "radio" id="delete"  value ="delete">Eliminar<br>
+        <input type="radio" name = "radio" id="modify"  value ="modify">Modificar<br>
+        <input type="radio" name = "radio" id="previous"  value ="previous">Anterior<br>
+        <input type="radio" name = "radio" id="next"  value ="next">Siguiente<br>
+        <input type="radio" name = "radio" id="first"  value ="first">Primero<br>
+        <input type="radio" name = "radio" id="last"  value ="last">Ultimo<br>
+    </div>
+    <br>
+    <div id="II">
+        <input type="text" id="textvalue">
+    </div>
+    <br>
+    <div id="III">
+        <button id ="accept" onclick="getValue();">Aceptar</button><br><br>
+        <button id ="clean" onclick="clearValue();">Limpiar</button>
+    </div>
+
+    <script>
+        
+        var db,
+        position = 0;
+        request = indexedDB.open("myDatabase");
+        
+        //Fallo en la base de datos 
+        request.onerror = function(event){
+            console.error("Database error: " + event.target.errorCode);
+        }
+        // No hay problemas en la base de datos 
+        request.onsuccess = function(event){
+            db = event.target.result;
+            prompter();
+        };
+        // Actualizar base de datos 
+        request.onupgradeneeded = function(event){ 
+            var db = event.target.result;
+            var objectStore = db.createObjectStore("values", { keyPath: "fer",  autoIncrement:true });
+        };
+
+        //Obtener la opcion de los radio botones a ejecutar 
+        function getValue(){option(document.querySelector('input[name="radio"]:checked').value);}
+        
+        //Limpiar el campo de texto 
+        function clearValue(){document.getElementById("textvalue").value = '';}
+
+        //Opciones de los radio botones 
+        function option(n){
+
+            switch(n){
+                case 'add':
+                    add();          //Agregar nuevo valor
+                    break
+
+                case 'delete':
+                    delet();        //Eliminar nuevo valor 
+                    break
+
+                case 'modify':
+                    modify();       //Modificar dependiendo de la posicion del apuntador
+
+                case 'previous':
+                    previous();     //Colocar el apuntador en el anterior valor  
+                    break
+
+                case 'next':
+                    next();         //Colocar el apuntador en el siguiente valor 
+                    break
+
+                case 'first':
+                    first();        //Colocar el apuntador en el primer valor
+                    break
+
+                case 'last':
+                    last();         //Colocar el apuntador en el ultimo valor
+                    break
+            }
+
+        }
+
+        //Asignacion del apuntador 
+        function prompter(n=0){
+
+            objectStore = db.transaction("values").objectStore("values");
+
+            if(position + n < 0 ) position = 0;
+            else position = position + n;
+            
+            if(position == 0) state = true;
+            else state = false;
+            
+            objectStore.openCursor().onsuccess = function(event){
+                var cursor = event.target.result; 
+                if (cursor){
+                    if (!state) {
+                        state = true;
+                        cursor.advance(position);
+                    }
+                    else document.getElementById('textvalue').value = cursor.value.content;
+                }
+                else position = position - n;
+            }
+        }
+
+        function add(){             //Agregar un valor a la base de datos
+
+            text = document.getElementById('textvalue').value;
+            db.transaction("values", "readwrite").objectStore("values").add({content:text});
+            prompter();
+
+        }
+
+        function delet(){       //Eliminar un valor a la base de datos
+            
+            objectStore = db.transaction("values", "readwrite").objectStore("values");
+            if(position == 0) state = true;
+            else state = false;
+            
+            objectStore.openCursor().onsuccess = function(event){
+                var cursor = event.target.result; 
+                if (cursor){
+                    if (!state){
+                        state = true;
+                        cursor.advance(position);
+                    }
+                    else{
+                        cursor.delete();
+                        document.getElementById('textvalue').value = '';
+                    }
+                }
+            }
+        }
+
+        function modify(){  //  Modificar un valor a la base de datos
+
+            objectStore = db.transaction("values", "readwrite").objectStore("values");
+            if(position == 0) state = true;
+            else state = false;
+                       
+            objectStore.openCursor().onsuccess = function(e){
+                var cursor = e.target.result; 
+                if (cursor){
+                    if (!state) {
+                        state = true;
+                        cursor.advance(position);
+                    }
+                    else{
+                        text = document.getElementById('textvalue').value;
+                        newText = cursor.value;
+                        newText.content = text;
+                        cursor.update(newText);
+                    }
+                }
+            }
+        }
+
+
+        function previous(){prompter(-1);}          //anterior          Navegacion del punteor 
+        function next(){prompter(1);}               //siguiente         dependiendo de los  
+        function first(){position=0;prompter();}    //primero           radio botone
+
+        function last(){                            //Ultimo 
+            
+            objectStore = db.transaction("values").objectStore("values");
+            position = -1;
+
+            objectStore.openCursor().onsuccess = function(event){
+                var cursor = event.target.result; 
+                if (cursor){
+                    position++;
+                    cursor.continue();
+                    document.getElementById('textvalue').value = cursor.value.content;
+                }
+                else {
+                    if(position<0){
+                        position = 0;
+                    }
+                }
+            }
+        }      
+
+    </script>
+
+</body>
+
+</html>
